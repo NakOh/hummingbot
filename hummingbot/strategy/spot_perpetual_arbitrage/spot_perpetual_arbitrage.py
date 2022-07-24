@@ -139,6 +139,7 @@ class SpotPerpetualArbitrageStrategy(StrategyPyBase):
         Clock tick entry point, is run every second (on normal tick setting).
         :param timestamp: current tick timestamp
         """
+        # 마켓 로드가 완료될 때까지 대기 후 실제 로직은 main에서 진행됩니다.
         if not self._all_markets_ready or not self._position_mode_ready or not self._trading_started:
             self._all_markets_ready = self.all_markets_ready()
             if not self._all_markets_ready:
@@ -193,11 +194,13 @@ class SpotPerpetualArbitrageStrategy(StrategyPyBase):
         """
         The main procedure for the arbitrage strategy.
         """
+        # 현재 전략의 상태값을 불러와서 업데이트하며 특정 조건일 때는 실행하지 않습니다.
         self.update_strategy_state()
         if self._strategy_state in (StrategyState.Opening, StrategyState.Closing):
             return
         if self.strategy_state == StrategyState.Closed and self._next_arbitrage_opening_ts > self.current_timestamp:
             return
+        # TODO : 정확한 분석이 필요함. 대략적인 추측으로는 구매 / 판매에 대한 적절한 반환값을 주는 듯? -> 전략에서 핵심적인 부분으로 보입니다.
         proposals = await self.create_base_proposals()
         if self._strategy_state == StrategyState.Opened:
             perp_is_buy = False if self.perp_positions[0].amount > 0 else True
@@ -214,8 +217,9 @@ class SpotPerpetualArbitrageStrategy(StrategyPyBase):
             self.logger().info(f"Profitability ({proposal.profit_pct():.2%}) is now above min_{pos_txt}_arbitrage_pct.")
             self._last_arb_op_reported_ts = self.current_timestamp
         self.apply_slippage_buffers(proposal)
-        if self.check_budget_constraint(proposal):
-            self.execute_arb_proposal(proposal)
+        # 위까지 다 통과한거라면 조건에 맞는 거래가 존재하고, 진행하면 되는 상황입니다.
+        if self.check_budget_constraint(proposal):  # 최종적으로 실행할 예산이 있는지를 확인하도록 합니다.
+            self.execute_arb_proposal(proposal)     # 실제로 거래를 실행하는 로직으로 보입니다.
 
     def update_strategy_state(self):
         """
@@ -236,6 +240,7 @@ class SpotPerpetualArbitrageStrategy(StrategyPyBase):
         Creates a list of 2 base proposals, no filter.
         :return: A list of 2 base proposals.
         """
+        # TODO : get_order_price의 정확한 의미 파악 market_trading_pari_tuble.py 에서 확인합니다. (maket은 다른 곳인듯..) 디버그를 통한 정확한 내용 파악 진행 해보자.
         tasks = [self._spot_market_info.market.get_order_price(self._spot_market_info.trading_pair, True,
                                                                self._order_amount),
                  self._spot_market_info.market.get_order_price(self._spot_market_info.trading_pair, False,
