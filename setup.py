@@ -87,7 +87,7 @@ def main():
         "python-telegram-bot",
         "requests",
         "rsa",
-        "ruamel-yaml",
+        "ruamel.yaml",
         "scipy",
         "signalr-client-aio",
         "simplejson",

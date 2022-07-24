@@ -31,6 +31,7 @@ from hummingbot.connector.exchange.bitfinex.bitfinex_utils import (
     get_precision,
 )
 from hummingbot.connector.exchange.bitfinex.bitfinex_websocket import BitfinexWebsocket
+from libcpp import bool as cppbool
 from hummingbot.connector.exchange_base import ExchangeBase
 from hummingbot.connector.trading_rule cimport TradingRule
 from hummingbot.core.data_type.cancellation_result import CancellationResult
@@ -1350,7 +1351,7 @@ cdef class BitfinexExchange(ExchangeBase):
                 order_side: TradeType,
                 amount: Decimal,
                 price: Decimal = s_decimal_nan,
-                is_maker: Optional[bool] = None) -> AddedToCostTradeFee:
+                is_maker: Optional[cppbool] = None) -> AddedToCostTradeFee:
         return self.c_get_fee(base_currency, quote_currency, order_type, order_side, amount, price, is_maker)
 
     def get_order_book(self, trading_pair: str) -> OrderBook:
